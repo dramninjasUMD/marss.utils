@@ -158,19 +158,24 @@ def is_dict(a):
 class DataTable:
 	# read the data file, convert the header information into a column map,
 	# 		and use numpy to load the data in the file
-	def __init__(self, data_filename, data_delimiter=",", skip_header=0):
+	def __init__(self, data_file, data_delimiter=",", skip_header=0):
 		""" Read the speficied file, extract the header information, and
 				convert it into numpy format
 			The columns can be read with get_data() with either the column 
 			header string or with the column number 
 		""" 
 
+		if isinstance(data_file, str):
+			if not os.path.exists(data_file):
+				print "ERROR: Can't open data file %s" % data_file
+				exit()
 
-		if not os.path.exists(data_filename):
-			print "ERROR: Can't open data file %s" % data_filename
-			exit()
-
-		fp = open(data_filename,"r");
+			fp = open(data_file,"r");
+		elif isinstance(data_file, file):
+			fp = data_file
+		else: 
+			print "ERROR: unknown object type passed to DataTable.__init__()"
+			exit() 
 
 		# skip the first skip_header lines -- the +1 makes it so that the loop 
 		# ends with the first line of interest in the buffer
@@ -184,7 +189,6 @@ class DataTable:
 			self.col_to_num_map = col_map_from_header(first_line)
 #			print self.col_to_num_map
 			self.has_header = True;
-		fp.close()
 
 		try:
 			# names=True doesn't seem to work as advertised -- it skips the first line, but I 
@@ -197,9 +201,9 @@ class DataTable:
 
 			if self.has_header:
 				skip_header = skip_header + 1
-			self.file_data=np.genfromtxt(data_filename, delimiter=data_delimiter, skiprows=skip_header)
+			self.file_data=np.genfromtxt(fp, delimiter=data_delimiter, skiprows=skip_header)
 		except IOError:
-			print "genfromtxt couldn't read the CSV data, file %s"%(data_filename)
+			print "genfromtxt couldn't read the CSV data, file %s"%(fp)
 			exit()
 	def get_column_idx(self, col):
 		""" Get a column number from a name (or number), returns 0 on error (usually the first column)"""
@@ -273,6 +277,9 @@ class DataTable:
 		ax.plot(x_data[filtered_indices], y_data[filtered_indices],label="%s"%(label),**(line_param_kwargs) );
 
 class SingleGraph:
+	"""
+		A SingleGraph contains multiple lines (LinePlots), axes, and a title. 
+	"""
 	def __init__(self, plots, x_axis_desc, y_axis_desc, title, show_legend=True, legend_kwargs={}):
 		self.plots = plots
 		self.x_axis_desc = x_axis_desc
@@ -292,13 +299,16 @@ class SingleGraph:
 				p.set_line_style(['-',1.0,line_color])
 
 	def draw(self,ax,output_mode):
-
+		"""
+			Take the plots inside of this SingleGraph and draw them 
+			into the 'ax' (Axis object) 
+		"""
 		self.colorize_default_lines()
 		for p in self.plots:
 			p.draw(ax);
 		if self.show_legend:
 			leg=ax.legend(**self.legend_kwargs)
-			if output_mode == "png": #latex output doesn't support alpha
+			if output_mode == "png": #ps backend doesn't support transparency
 				leg.get_frame().set_alpha(0.5);
 			plt.setp(leg.get_texts(), fontsize='small')
 
@@ -311,7 +321,7 @@ class SingleGraph:
 
 class LinePlot:
 	def __init__(self,data_table,x_col,y_col,label,line_params=None):
-		""" A line plot really just corresponds to a x,y pair from the
+		""" A line plot really just corresponds to a x,y column pair from the
 			data table along with a label in the legend """ 
 		self.x_col = x_col
 		self.y_col = y_col 
@@ -353,6 +363,7 @@ class AxisDescription:
 		self.range_max = range_max
 
 def percent(a,b):
+	# HACK ALERT: the +1E-20 is to prevent divide by zero errors
 	return float(b)/(float(a)+1E-20)*100.0
 
 if __name__ == "__main__":
