@@ -205,6 +205,9 @@ class DataTable:
 		except IOError:
 			print "genfromtxt couldn't read the CSV data, file %s"%(fp)
 			exit()
+	def contains_column(self, col_name):
+		return col_name in self.col_to_num_map
+
 	def get_column_idx(self, col):
 		""" Get a column number from a name (or number), returns 0 on error (usually the first column)"""
 		if is_string(col):
