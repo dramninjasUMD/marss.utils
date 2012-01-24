@@ -61,10 +61,10 @@ def parse_arguments():
 	parser.add_option("-f", "--file", dest="yaml_filename", help="yaml filename with which to generate a graph", metavar="FILE")
 	parser.add_option("-e", "--email", dest="email", help="email the png output (currently no support for emailing pdfs) (mail settings in config.py)", action="store_true")
 	parser.add_option("-v", "--verbose", dest="verbose", help="spit out debug output", action="store_true")
-	parser.add_option("-o", "--output", dest="output_filename", help="generate output file", default="out.png")
-	parser.add_option("-w", "--width", dest="width", help="total width of output image (inches)", default=14)
-	parser.add_option("-r", "--row_height", dest="height", help="height of each row (inches)", default=5)
-	parser.add_option("-c", "--columns", dest="columns", help="number of columns", default=1)
+	parser.add_option("-o", "--output", dest="output_filename", help="generate output file")
+	parser.add_option("-w", "--width", dest="width", help="total width of output image (inches)")
+	parser.add_option("-r", "--row_height", dest="row_height", help="height of each row (inches)")
+	parser.add_option("-c", "--columns", dest="columns", help="number of columns")
 	parser.set_usage("""Usage: %prog [options] input_file1=INPUT_FILE ... input_fileN=INPUT_FILE 
 
 The input_file fields are key-value pairs used by the plot's
@@ -102,9 +102,27 @@ then the command line should read something like:
 
 	return (debug,options,kv_args)
 
+def get_parameter(key, default_value, y, options, kv_args):
+	""" get the parameter value either from the yaml or command line with
+		preference given to the command line
+		returns the 'default_value' parameter if the argument isn't set
+	"""
+	options_dict = vars(options)
+	if key in options_dict and options_dict[key]:
+		try:
+			return float(options_dict[key])
+		except ValueError:
+			return options_dict[key]
+	elif key in y:
+		return y[key]
+	elif key in kv_args:
+		return kv_args[key]
+	else:
+		return default_value
+
 if __name__ == "__main__":
 
-	debug,options,args = parse_arguments()
+	debug,options,kv_args = parse_arguments()
 
 	# load the YAML file
 	y = yaml.load(open(options.yaml_filename).read()) 
@@ -120,13 +138,21 @@ if __name__ == "__main__":
 		for plot_title,line_params_arr in plot_nodes.iteritems():
 			for plot in line_params_arr["plots"]:
 				input_file_label = plot["datafile"]
-				if input_file_label not in args:
-					print "ERROR: yaml file %s expects input file %s, which was not defined"%(options.yaml_filename, input_file_label)
-					exit(); 
 
+				# set the input file from either the yaml or command line -- if
+				# both are given, prefer the command line 
+				if input_file_label not in kv_args:
+					if input_file_label not in y["datafiles"]:
+						print "ERROR: yaml file %s expects input file %s, which was not defined"%(options.yaml_filename, input_file_label)
+						exit(); 
+					else:
+						input_file = y["datafiles"][input_file_label]
+				else:
+					input_file = kv_args[input_file_label]
+
+				# only load the data table if this label isn't already there
 				if input_file_label not in datatables:
-					datatables[input_file_label] = load_data_table(args[input_file_label])
-				#else, we've already loaded this file
+					datatables[input_file_label] = load_data_table(input_file)
 				
 	# now go ahead and create the graphs array
 	for plot_nodes in y["graphs"]:
@@ -141,29 +167,34 @@ if __name__ == "__main__":
 						if "line_params" in plot:
 							line_params = plot["line_params"]	
 						line_plots.append(LinePlot(dt, plot['x_col'], col_name, col_description, line_params))
-				g.append(SingleGraph(line_plots, AxisDescription(line_params_arr["axes"]["x_label"]), AxisDescription(line_params_arr["axes"]["y_label"]) , plot_title))
-				if debug:
-					pprint.pprint(plot)
+			g.append(SingleGraph(line_plots,  title=plot_title, **line_params_arr["properties"]))
 			if debug:
-				print "Axes: x="+line_params_arr["axes"]["x_label"]+", y="+line_params_arr["axes"]["y_label"]
+				pprint.pprint(plot)
 
-	graph_output_file = options.output_filename
-	if not options.email and graph_output_file.endswith(".pdf"):
+	# Grab all the parameters here 
+	title = get_parameter("title", "Graph Title", y, options, kv_args)
+	width = get_parameter("width", 14.0, y, options, kv_args)
+	row_height = get_parameter("row_height", 5.0, y, options, kv_args)
+	columns = get_parameter("columns", 1, y, options, kv_args)
+	output_filename = get_parameter("output_filename", "out.png", y, options, kv_args)
+	if debug:
+		print "width=%f, row_height=%f, cols=%d"%(width,row_height, columns)
+	
+	if not options.email and output_filename.endswith(".pdf"):
 		print "WARNING: cannot email pdf files, writing PDF but not emailing!"
 		output_mode = "latex"
 		options.email = False;
 	else:
 		output_mode = "png"
-	
 	string_arr= [pprint.pformat(y)]
 	# finally, hand over the graphs array to a CompositeGraph to generate the layout/output
-	cg = CompositeGraph(title=y["title"],num_cols=options.columns,num_boxes=len(g),output_mode=output_mode)
-	cg.w = options.width/cg.get_num_cols()
-	cg.h = options.height*cg.get_num_rows()
+	cg = CompositeGraph(title=title,num_cols=columns,num_boxes=len(g),output_mode=output_mode)
+	cg.w = width/cg.get_num_cols()
+	cg.h = row_height*cg.get_num_rows()
 	if debug:
 		print "C=%d, R=%d"%(cg.get_num_cols(), cg.get_num_rows())
-	cg.draw(g, graph_output_file);
-	outfiles = [graph_output_file]
+	cg.draw(g, output_filename);
+	outfiles = [output_filename]
 
 	if options.email:
 		authorize_and_send(None,outfiles,strings_arr=string_arr);

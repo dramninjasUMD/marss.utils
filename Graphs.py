@@ -283,10 +283,13 @@ class SingleGraph:
 	"""
 		A SingleGraph contains multiple lines (LinePlots), axes, and a title. 
 	"""
-	def __init__(self, plots, x_axis_desc, y_axis_desc, title, show_legend=True, legend_kwargs={}):
+	def __init__(self, plots, x_axis_desc={"label": "x axis"}, y_axis_desc={"label": "y axis"}, title="Graph Title", show_legend=True, legend_kwargs={}):
 		self.plots = plots
+		print "X"+str(x_axis_desc)
+		print "Y"+str(y_axis_desc)
 		self.x_axis_desc = x_axis_desc
 		self.y_axis_desc = y_axis_desc
+
 		self.title = title
 		self.show_legend = show_legend
 		self.legend_kwargs = legend_kwargs;
@@ -315,10 +318,13 @@ class SingleGraph:
 				leg.get_frame().set_alpha(0.5);
 			plt.setp(leg.get_texts(), fontsize='small')
 
-		ax.xaxis.set_label_text(self.x_axis_desc.label)
-		ax.yaxis.set_label_text(self.y_axis_desc.label)
-		ax.set_ybound(self.y_axis_desc.range_min,self.y_axis_desc.range_max)
-		ax.set_xbound(self.x_axis_desc.range_min,self.x_axis_desc.range_max)
+		ax.xaxis.set_label_text(self.x_axis_desc["label"])
+		ax.yaxis.set_label_text(self.y_axis_desc["label"])
+		try:
+			ax.set_ybound(self.y_axis_desc["range_min"],self.y_axis_desc["range_max"])
+			ax.set_xbound(self.x_axis_desc["range_min"],self.x_axis_desc["range_max"])
+		except KeyError:
+			pass;
 
 		ax.set_title(self.title)
 
@@ -358,12 +364,6 @@ class LinePlot:
 
 	def draw(self,ax):
 		self.data_table.draw(ax, self.x_col, self.y_col, self.label, self.lineplot_kwargs)
-
-class AxisDescription:
-	def __init__(self,label,range_min=None,range_max=None):
-		self.label = label
-		self.range_min = range_min
-		self.range_max = range_max
 
 def percent(a,b):
 	# HACK ALERT: the +1E-20 is to prevent divide by zero errors
