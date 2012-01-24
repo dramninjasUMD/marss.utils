@@ -127,8 +127,8 @@ cycle_number,bandwidth,latency
 3000,5.2,130
 
 This format is consistent with the output format of the new time-based stats 
-support in marss. For more information about how to use the new time-based stats 
-please my post here: http://www.mail-archive.com/marss86-devel@cs.binghamton.edu/msg00433.html
+support in marss. The listserv archive would be a good place to start 
+for understanding how to enable time-based stats. 
 
 2.3 Specifying Graphs
 There are four main objects in Graphs.py: CompositeGraph, SingleGraph, LinePlot, and DataTable.
@@ -163,7 +163,10 @@ name titled "foo_percent" which can be referenced when creating a LinePlot
 object. See the main function in Graphs.py for an example. 
 
 2.5 Examples
-For now, please see the bottom of Graphs.py for examples of how to generate
-graphs.
+A script that can generate both LaTeX-ready pdfs and png files from a yaml file is
+called graph_yaml.py.
+
+More details about how to use this file are coming soon. 
+
 
 
