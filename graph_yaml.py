@@ -12,12 +12,16 @@ import config
 import yaml
 import pprint
 import BOB 
+import DRAMSim
 
 from optparse import OptionParser
 
 def load_data_table(filename):
+	#TODO: replace with a factory pattern and put all these functions in one place 
 	if filename.endswith(".bob"):
 		return BOB.bob_file_to_datatable(filename)
+	elif filename.endswith(".vis"):
+		return DRAMSim.vis_file_to_datatable(filename)
 	else:
 		return DataTable(filename); 
 	
