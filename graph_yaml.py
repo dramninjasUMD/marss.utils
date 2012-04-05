@@ -184,7 +184,7 @@ if __name__ == "__main__":
 	if debug:
 		print "width=%f, row_height=%f, cols=%d"%(width,row_height, columns)
 	
-	if not options.email and output_filename.endswith(".pdf"):
+	if options.email and output_filename.endswith(".pdf"):
 		print "WARNING: cannot email pdf files, writing PDF but not emailing!"
 		output_mode = "latex"
 		options.email = False;

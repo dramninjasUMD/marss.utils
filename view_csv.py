@@ -11,7 +11,7 @@ def print_and_get_field_length(field, remove_prefix):
 	if remove_prefix: 
 		field = field.replace(remove_prefix,"",1)
 	field = field.strip()+" "
-	print field,
+	print "%40s"%field,
 	return len(field)
 
 if __name__ == "__main__":
@@ -43,6 +43,5 @@ Example: view_csv.py blah.csv base_machine.node."
 			continue; 
 
 		for i,field in enumerate(line.split(",")):
-			field = field.strip() + (" "*(header_field_lengths[i]-len(field)))
-			print field,
-		print "" #newline
+#			field = field.strip() + (" "*(header_field_lengths[i]-len(field)))
+			print "%40s"%field,

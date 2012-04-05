@@ -92,8 +92,8 @@ class CompositeGraph:
 
 
 	def rect_for_graph(self, idx):
-		y_margin = self.get_height_px(80)
-		x_margin = self.get_width_px(100)
+		x_margin = self.get_width_px(50)
+		y_margin = self.get_height_px(50)
 		row = idx/self.num_cols;
 		col = idx%self.num_cols;
 		h = 1.0/float(self.num_rows)-(1.0+1.0/float(self.num_rows))*y_margin

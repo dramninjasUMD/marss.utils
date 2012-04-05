@@ -8,7 +8,7 @@ from Graphs import *
 
 def vis_file_to_datatable(filename):
 	if not os.path.exists(filename):
-		print "ERROR: BOB file %s not found"%filename
+		print "ERROR: vis file %s not found"%filename
 		exit()
 	
 	output = tempfile.NamedTemporaryFile(delete=False)
@@ -24,7 +24,7 @@ def vis_file_to_datatable(filename):
 			break;
 		if startCopying: 
 			output.write(line)
-	print "outfilename="+output.name
+	print "input=%s output=%s"%(filename,output.name)
 	output.close()
 	return DataTable(output.name)
 
