@@ -13,6 +13,7 @@ import yaml
 import pprint
 import BOB 
 import DRAMSim
+import itertools
 
 from optparse import OptionParser
 
@@ -25,8 +26,21 @@ def load_data_table(filename):
 	else:
 		return DataTable(filename); 
 	
-# should match someVar(0..10)
-regex = re.compile(r'(\w+)\((\d+)..(\d+)\)');
+"""
+matches the variable name plus up to 3 optional sets of either: 
+[x..y] or [x] 
+the groups() will return all 6 pairs with the missing ones as None
+so for example
+Bandwidth[0..2][4][7]
+Should return 
+[Bandwidth, 0, 2, 4, None, 7, None]
+"""
+
+parens_sub_expr = '(?:\[(\d+)(\.\.)?(\d+)?\])?'
+regex = re.compile('(\w+)'+(parens_sub_expr*3));
+
+def find_key_max_array_index(key, dimension):
+	return 8;
 
 def create_key_lookup_range(y_col_name, y_col_description):
 	""" return a list of tupules containing the column name and column
@@ -36,22 +50,44 @@ def create_key_lookup_range(y_col_name, y_col_description):
 			,(somevar[2], 'foo 2')
 			,(somevar[3], 'foo 3')]
 	"""
+	base_key, ranges = get_lookup_ranges_for_ranged_strings(y_col_name)
+	keys = []
+	for product_tupule in itertools.product(*ranges): 
+		string = base_key
+		for p in product_tupule:
+			string += "[%s]"%str(p)
+		keys.append((string,string))
+	return keys
 
+def get_lookup_ranges_for_ranged_strings(y_col_name):
 	matches = regex.match(y_col_name)
 	if not matches: 
-		return [(y_col_name,y_col_description)]
+		return [(y_col_name), [] ]
 	else:
-		base_key = matches.group(1)
-		ret_arr = []
-	
-		for i in range(int(matches.group(2)), int(matches.group(3))):
-			if "%d" in y_col_description:
-				output_description = y_col_description%i
+		range_arr = []
+		match_arr = matches.groups()
+		print matches.groups()
+		base_key,ranges = match_arr[0],match_arr[1:]
+		for i in [x*3 for x in range(len(ranges)/3)]:
+			lower,to,upper = ranges[i], ranges[i+1], ranges[i+2]
+			if lower == None:
+				#this array index doesn't exist, do nothing
+				pass;
 			else:
-				output_description = y_col_description
+				lower = int(lower)
+				if to == None or lower == upper:
+					#this is a single index
+					range_arr.append([int(lower)])
+				elif to !=None and upper == None:
+					#unspecified upper range like [0..]
+					upper = find_key_max_array_index(base_key,i/3)
+					range_arr.append(range(lower, upper))
+				elif to != None and upper != None:
+					#specified upper range like [0..10]
+					range_arr.append(range(lower, int(upper)))
+		print "found ranges: ", range_arr
+		return (base_key, range_arr)
 
-			ret_arr.append(("%s[%d]"%(base_key,i), output_description))
-		return ret_arr
 def process_kv_arguments(args):
 	ret_dict = {}
 	for a in args:
@@ -171,6 +207,8 @@ if __name__ == "__main__":
 						if "line_params" in plot:
 							line_params = plot["line_params"]	
 						line_plots.append(LinePlot(dt, plot['x_col'], col_name, col_description, line_params))
+					else:
+						print "Column %s not found"%col_name
 			g.append(SingleGraph(line_plots,  title=plot_title, **line_params_arr["properties"]))
 			if debug:
 				pprint.pprint(plot)

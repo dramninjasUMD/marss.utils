@@ -1,13 +1,6 @@
 This is a set of tools we use for dealing with simulation results that come out
 of marss. 
 
-I sincerely apologize for the code you're about to witness it was written in an
-evolutionary style so it's not particularly clean or elegant, but some of it
-might be useful for people to look at to design their own helper scripts.
-
-I'll eventually try to write up some stuff about what there are intended to do
-...
-
 The graphing scripts rely heavily on numpy and matplotlib, which are excellent
 math and plotting libraries, respectively. 
 
@@ -166,7 +159,25 @@ object. See the main function in Graphs.py for an example.
 A script that can generate both LaTeX-ready pdfs and png files from a yaml file is
 called graph_yaml.py.
 
-More details about how to use this file are coming soon. 
+This file allows you to specify some metadata about the graph (title, size,
+data file paths, etc.) and then it allows you to define one or more plots which
+each contain one or more lines. 
 
+Since the format is somehwat arbitrarily defined by me, it's best to look at
+example.yaml which uses example.vis (a sample DRAMSim2 output file from version
+0.1) to generate an output file example.png. 
 
+This should give you a good feel for the structure of the YAML that the graphing 
+script expects. 
 
+To run the example you can run: 
+
+./graph_yaml.py -f example.yaml 
+
+which should spit out the example.png file. See 
+
+./graph_yaml.py -h 
+
+for a full list of command line options. 
+
+I'm still adding features to graph_yaml, so stay tuned for more examples. 
